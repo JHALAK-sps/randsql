@@ -1,0 +1,109 @@
+---
+title: "R and SQL"
+output: html_document
+---
+
+# Jhalak Das 
+## Week 3 Assignment
+
+**
+In this project, 
+    I created a SQL instance in GCP, 
+    connect it to MYSQL Workbench,
+    created a database and tree separate tables in that database,
+    imported necessary r libraries, configured DSN 
+    and connected the database through odbc
+    Also ran few SQL custom queries directly from r.
+    Finally, uploaded the code to my github repository.
+**
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Import libraries
+```{r}
+library(RODBC)
+library(dplyr)
+library(DBI)
+library(odbc)
+```
+
+## Display all three tables
+```{r}
+conn1 <- odbcConnect("MySQL_DSN")
+sqlQuery(conn1, 'SELECT * FROM usertbl')
+sqlQuery(conn1, 'SELECT * FROM movietbl')
+sqlQuery(conn1, 'SELECT * FROM reviewtbl')
+```
+
+## Join data from all table 
+```{r}
+sqlQuery(conn1, 
+"SELECT M.title As 'Title', U.full_name As 'User',
+R.rating As 'Rating'
+FROM movietbl AS M
+JOIN reviewtbl AS R
+ON M.movie_id = R.movie_id
+JOIN usertbl AS U
+ON U.user_id = R.user_id;"
+)
+```
+
+## Custom Query based on single user
+```{r}
+sqlQuery(conn1, "SELECT 
+M.title As 'Title',
+U.full_name As 'User',
+R.rating As 'Rating'
+FROM movietbl AS M
+JOIN reviewtbl AS R
+ON M.movie_id = R.movie_id
+JOIN usertbl AS U
+ON U.user_id = R.user_id
+WHERE U.user_id = 1;")
+```
+
+
+## Custom query based on certain rating
+```{r}
+sqlQuery(conn1, "SELECT 
+M.title As 'Title',
+U.full_name As 'User',
+R.rating As 'Rating'
+FROM movietbl AS M
+JOIN reviewtbl AS R
+ON M.movie_id = R.movie_id
+JOIN usertbl AS U
+ON U.user_id = R.user_id
+WHERE R.rating = 5;")
+```
+
+
+## Another way to connect to database created in MySQL
+```{r}
+conn2 <- dbConnect(odbc :: odbc(), "MySQL_DSN")
+
+# List tables
+dbListTables(conn2)
+
+# List columns of certain table
+dbListFields(conn2, "movietbl")
+```
+
+## Import tables as df
+```{r}
+movietbl <- tbl(conn2, "movietbl")
+movietbl_df <- collect(movietbl)
+movietbl_df 
+
+usertbl <- tbl(conn2, "usertbl")
+usertbl_df <- collect(usertbl)
+usertbl_df 
+
+reviewtbl <- tbl(conn2, "reviewtbl")
+reviewtbl_df <- collect(reviewtbl)
+reviewtbl
+```
+
+
